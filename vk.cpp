@@ -1,4 +1,5 @@
 #include "vk.h"
+#include "utils.h"
 
 
 CVK::~CVK() 
@@ -180,17 +181,17 @@ int CVK::writer(char * data, size_t size, size_t nmemb, std::string *buffer)
 }
 
 
-CVK::CVK(std::string _login, std::string _password) 
+CVK::CVK(std::string _login, std::string _password, int permissons, std::string app_id) 
 {
 	VKError = VKE_NORM;
 	VKErrno = VKE_NORM;
 	cleanCookies();
-	connectSettings.client_id = "5312450";
+	connectSettings.client_id = app_id;
 	connectSettings.current_access_token = "";
 	connectSettings.email = _login;
 	connectSettings.password = _password;
 
-	connectSettings.scopes = "offline,messages";
+	connectSettings.scopes = createPermissions(permissons);
 	connectSettings.display = "mobile";
 	connectSettings.settings = "69632";
 
@@ -233,6 +234,22 @@ void CVK::cleanBuffers() {
 	errorBuffer = "";
 }
 
+std::string CVK::createPermissions(int permissions) {
+	std::string result = "";
+	if( permissions & (1 << PERMISSION_OFFLINE) ) {
+		result += PERMISSION_STRING_OFFLINE;
+		result += ',';
+	}
+	if( permissions & (1 << PERMISSION_MESSAGES)) {
+		result += PERMISSION_STRING_MESSAGES;
+		result += ',';
+	}
+
+	CutOutSymbols(result, ',');
+
+	return result;
+}
+
 int CVK::connectStartPage() {
 	printf("Start connectStartPage\n");
 
@@ -272,9 +289,21 @@ int CVK::connectAuthorize() {
 	int result = -1;
 	std::string url = "https://login.vk.com/?act=login&soft=1&utf8=1";
 
+	std::string ToString = "https://oauth.vk.com/authorize?client_id=";
+	ToString += connectSettings.client_id;
+	ToString += "&redirect_uri=https%3A%2F%2Foauth.vk.com%2Fblank.html&response_type=token&scope=";
+	ToString += connectSettings.settings;
+	ToString += "&v=5.37&state=&revoke=1&display=";
+	ToString += connectSettings.display;
+
+	unsigned char ucBuffer[ToString.size()];
+	strcpy((char*)ucBuffer, ToString.c_str());
+
+	std::string requestBase64 = base64_encode(ucBuffer, ToString.size());
+
     std::string request = "_origin=https://oauth.vk.com";
     request += "&to=";
-    request += "aHR0cHM6Ly9vYXV0aC52ay5jb20vYXV0aG9yaXplP2NsaWVudF9pZD01MzEyNDUwJnJlZGlyZWN0X3VyaT1odHRwcyUzQSUyRiUyRm9hdXRoLnZrLmNvbSUyRmJsYW5rLmh0bWwmcmVzcG9uc2VfdHlwZT10b2tlbiZzY29wZT02OTYzMiZ2PTUuMzcmc3RhdGU9JnJldm9rZT0xJmRpc3BsYXk9bW9iaWxl";
+    request += requestBase64;
     request += "&email=" + connectSettings.email;//+"test_email";
     request += "&pass=" + connectSettings.password;//+"test_pass";
     request += "&ip_h=" + connectSettings.current_ip_h;
@@ -292,6 +321,7 @@ int CVK::connectAuthorize() {
     	return VKE_REQUEST;
     }
 
+    printf("buffer Auth = %s\n", buffer.c_str());
 
     //connectSettings.current_ip_h = parseIPH(buffer);
     connectSettings.current_hash = parseHash(buffer);
@@ -367,18 +397,6 @@ void CVK::reconnect()
     if(VKErrno != VKE_NORM) return;
 }
 
-
-std::string CVK::fillSpaces(std::string msg) {
-	std::string result = "";
-	for(int i = 0; i < msg.size(); i++ ) {
-		if(msg[i] != ' ') 
-			result += msg[i];
-		else
-			result += "%20";
-	}
-
-	return result;
-}
 
 
 int CVK::send_message(std::string user_id, std::string message) {

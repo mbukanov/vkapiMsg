@@ -6,6 +6,12 @@
 
 #define COOKIE_FILE "cookie.txt"
 
+#define PERMISSION_OFFLINE 0b1
+#define PERMISSION_STRING_OFFLINE "offline"
+
+#define PERMISSION_MESSAGES 0b10
+#define PERMISSION_STRING_MESSAGES "messages"
+
 #define VKE_NORM 0
 #define VKE_REQUEST -1
 #define VKE_AUTH  -2
@@ -36,7 +42,7 @@ struct ConnectSettings {
 class CVK {
 public:
 
-	CVK(std::string _login, std::string _password);
+	CVK(std::string _login, std::string _password, int permissions, std::string app_id);
 	~CVK();
 	
 	int curlSettings();
@@ -57,7 +63,8 @@ public:
 	int send_message(std::string user_id, std::string message);
 	int set_status(std::string text);
 
-	std::string fillSpaces(std::string msg);
+
+	std::string createPermissions(int permissions);
 
 	void cleanBuffers();
 
@@ -66,12 +73,13 @@ public:
 	int Error() { return VKError; }
 	int Errno() { return VKErrno; }
 
-
 private:
 	CURL * curl;
 	
 	int VKErrno;
 	int VKError;
+
+	std::string permissions;
 
 	ConnectSettings connectSettings;
 

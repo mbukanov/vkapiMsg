@@ -3,10 +3,12 @@
 std::string fillSpaces(std::string msg) {
 	std::string result = "";
 	for(int i = 0; i < msg.size(); i++ ) {
-		if(msg[i] != ' ') 
-			result += msg[i];
-		else
+		if(msg[i] == ' ')
 			result += "%20";
+		else if(msg[i] == '\n')
+			result += "%0A";
+		else 
+			result += msg[i];
 	}
 
 	return result;

@@ -3,6 +3,9 @@
 #include <string.h>
 #include <string>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 #define COOKIE_FILE "cookie.txt"
 
@@ -11,6 +14,9 @@
 
 #define PERMISSION_MESSAGES 0b10
 #define PERMISSION_STRING_MESSAGES "messages"
+
+#define PIPE_PATH "/tmp/VKpipe"
+#define PIPE_SIZE 256
 
 #define VKE_NORM 0
 #define VKE_REQUEST -1
@@ -73,11 +79,20 @@ public:
 	int Error() { return VKError; }
 	int Errno() { return VKErrno; }
 
+	int createPipe();
+	int closePipe();
+	void clearPipeBuffer();
+	int get_pipe_fd();
+	char * getPipeBuffer();
+
 private:
 	CURL * curl;
 	
 	int VKErrno;
 	int VKError;
+
+	int pipe_fd;
+	char pipe_buffer[PIPE_SIZE];
 
 	std::string permissions;
 

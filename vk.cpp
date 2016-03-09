@@ -6,6 +6,10 @@ CVK::~CVK()
 {
 	if(curl != NULL)
 		curl_easy_cleanup(curl);
+
+	if(get_pipe_fd() > 0) {
+		closePipe();
+	}
 }
 
 void CVK::cleanCookies() {
@@ -39,6 +43,39 @@ std::string CVK::parseHash(std::string buffer)
 	return hash;
 }
 
+
+int CVK::createPipe() 
+{
+	mkfifo(PIPE_PATH, S_IRWXU);
+	pipe_fd = open(PIPE_PATH, O_RDONLY);
+	clearPipeBuffer();
+
+	return 0;
+}
+
+int CVK::closePipe() 
+{
+	if(pipe_fd > 0) {
+		close(pipe_fd);
+	}
+
+	return 0;
+}
+
+int CVK::get_pipe_fd() 
+{
+	return pipe_fd;
+}
+
+char * CVK::getPipeBuffer() 
+{
+	return pipe_buffer;
+}
+
+void CVK::clearPipeBuffer() 
+{
+	memset(pipe_buffer, 0, PIPE_SIZE);
+}
 
 
 std::string CVK::parseAccessToken(std::string buffer)
@@ -401,6 +438,8 @@ void CVK::reconnect()
 
 int CVK::send_message(std::string user_id, std::string message) {
 	printf("Start send_message\n");
+	printf("user_id = %s\n", user_id.c_str());
+	printf("message = %s\n", message.c_str());
 
 	int result = -1;
 	cleanBuffers();
@@ -417,6 +456,8 @@ int CVK::send_message(std::string user_id, std::string message) {
 	url += message;
 	url += "&v=5.37&access_token=";
 	url += connectSettings.current_access_token;
+
+	printf("url = %s\n", url.c_str());
 
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);

@@ -3,13 +3,10 @@
 
 int main(int argc, char ** argv) {
 
-	if(argc <= 1)
-		return 0;
-
-	// change this on your login and password
+	// change this on your login and password 
 	std::string login = "your_email";
 	std::string password = "your_password";
-	std::string app_id = "app_id";
+	std::string app_id = "5312450";
 
 	CVK * vk = new CVK(login, password, PERMISSION_OFFLINE | PERMISSION_MESSAGES, app_id);
 
@@ -20,10 +17,19 @@ int main(int argc, char ** argv) {
 
 	std::string user_id = "202692118"; // change this on user_id recipient
 
-	vk->send_message(user_id, argv[1]);
-	if(vk->Error() & (1 << VKE_SEND_MESSAGE)) {
-		printf("VKerror: send message\n");
+	vk->createPipe();
+	vk->clearPipeBuffer();
+
+	while(true) {
+		while(read(vk->get_pipe_fd(), vk->getPipeBuffer(), PIPE_SIZE) > 0) {
+			vk->send_message(user_id, vk->getPipeBuffer());
+			if(vk->Error() & (1 << VKE_SEND_MESSAGE)) {
+				printf("VKerror: send message\n");
+			}
+			vk->clearPipeBuffer();
+		}
 	}
+
 
 	delete vk;
 
